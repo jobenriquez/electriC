@@ -1,5 +1,9 @@
 import lexer
 from sys import *
 
-lexer.read(argv[1])
+try:
+    lexer.read(argv[1])
+except FileNotFoundError:
+    print(f"File not found error: File '{argv[1]}' cannot be located.")
+
 
