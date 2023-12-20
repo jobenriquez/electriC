@@ -9,11 +9,11 @@ ALPHANUMERIC = DIGITS + LETTERS
 #############################
 #         Data types        #
 #############################
-TT_CHAR = 'DATATYPE_CHAR'
-TT_INT = 'DATATYPE_INT'
-TT_FLOAT = 'DATATYPE_FLOAT'
-TT_STR = 'DATATYPE_STR'
-TT_BOOL = 'DATATYPE_BOOL'
+TT_CHAR = 'DT_CHAR'
+TT_INT = 'DT_INT'
+TT_FLOAT = 'DT_FLOAT'
+TT_STR = 'DT_STR'
+TT_BOOL = 'DT_BOOL'
 #############################
 #          Literals         #
 #############################
@@ -71,9 +71,9 @@ TT_DOUBLEQUOTE = 'DEL_DBLQUOTE'
 #############################
 #          Comments         #
 #############################
-TT_SGLCMNT = 'COMMENT_SGLLINE'
-TT_MLTCMNTOPN = 'COMMENT_MLTLINE_OPEN'
-TT_MLTCMNTCLS = 'COMMENT_MLTLINE_CLOSE'
+TT_SGLCMNT = 'CMNT_SGLLINE'
+TT_MLTCMNTOPN = 'CMNT_MLTLINE_OPN'
+TT_MLTCMNTCLS = 'CMNT_MLTLINE_CLSE'
 #############################
 #  Keywords/Reserved words  #
 #############################

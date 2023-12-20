@@ -1,6 +1,5 @@
 Main
 {
-  `
   float timeInMinutes = 3.5;
   float timeInSeconds = 0; //This is a comment
   float amperes = 20.0; 
