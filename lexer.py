@@ -1,5 +1,5 @@
 from constants import *
-from errors import IllegalCharError, UnexpectedFileExtentionError, UnterminatedCommentError
+from errors import IllegalCharError, UnexpectedFileExtentionError, UnterminatedCommentError, ExcelPermissionError
 import os
 import pandas as pd
 
@@ -16,10 +16,13 @@ def read(file):
     tokens = run(contents)
 
     # Export tokens to a spreadsheet file
-    data = {'Token type': [token.type_ for token in tokens], 'Token value': [token.value for token in tokens]}
-    df = pd.DataFrame(data)
-    df.to_excel('tokens_table.xlsx', index=False)
-
+    try:
+        data = {'Token type': [token.type_ for token in tokens], 'Token value': [token.value for token in tokens]}
+        df = pd.DataFrame(data)
+        df.to_excel('tokens_table.xlsx', index=False)
+    except Exception as e:
+        raise ExcelPermissionError()
+        
 def run(contents):
         lexer = Lexer(contents)
         tokens = lexer.make_tokens()
