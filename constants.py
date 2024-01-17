@@ -21,6 +21,8 @@ TT_INTLIT = 'LIT_INT'
 TT_FLOATLIT = 'LIT_FLT'
 TT_STRLIT = 'LIT_STR'
 TT_CHARLIT = 'LIT_CHAR'
+TT_BOOLTRUE = 'LIT_BOOLTRUE'
+TT_BOOLFALSE = 'LIT_BOOLFALSE'
 #############################
 #   Assignment Operators    #
 #############################
@@ -65,24 +67,32 @@ TT_LBRACKET = 'DEL_LBRACKET'
 TT_RBRACKET = 'DEL_RBRACKET'
 TT_LBRACE = 'DEL_LBRACE'
 TT_RBRACE = 'DEL_RBRACE'
+TT_COMMA = 'DEL_COMMA'
 TT_SEMICOLON = 'DEL_SEMICOLON'
 TT_SINGLEQUOTE = 'DEL_SGLQUOTE'
 TT_DOUBLEQUOTE = 'DEL_DBLQUOTE'
 #############################
 #          Comments         #
 #############################
-TT_SGLCMNT = 'CMNT_SGLLINE'
-TT_MLTCMNTOPN = 'CMNT_MLTLINE_OPN'
-TT_MLTCMNTCLS = 'CMNT_MLTLINE_CLSE'
-#############################
-#  Keywords/Reserved words  #
-#############################
+TT_SGLCMNT = 'CMNT_SGLLNE'
+TT_MLTCMNTOPN = 'CMNT_MLTLNE_OPN'
+TT_MLTCMNTCLS = 'CMNT_MLTLNE_CLSE'
+#################################
+#  Keywords and Reserved words  #
+#################################
 DATA_TYPES = {
     'char': TT_CHAR,
+    'character': TT_CHAR,
     'int': TT_INT,
+    'integer': TT_INT,
     'float': TT_FLOAT,
     'string': TT_STR,
     'bool': TT_BOOL,
+    'boolean': TT_BOOL
+}
+BOOL_TYPES = {
+    'true': TT_BOOLTRUE,
+    'false': TT_BOOLFALSE
 }
 RESERVED_WORDS = [
     'if',

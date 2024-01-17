@@ -10,7 +10,5 @@ Main
   timeInSeconds = MTS(timeInMinutes); //Comment 3
   charge = CCH(timeInSeconds);
   PrintLine(charge); 
-  message = "hello world"
+  message = "hello world";
 }
-
-    

@@ -74,6 +74,8 @@ class Lexer:
 
         if id_str in DATA_TYPES: 
             return Token(DATA_TYPES[id_str], id_str)
+        elif id_str in BOOL_TYPES:
+            return Token(BOOL_TYPES[id_str], id_str)
         elif id_str in KEYWORDS:
             return Token(TT_KEYWORD, id_str)
         elif id_str in RESERVED_WORDS:
@@ -111,6 +113,27 @@ class Lexer:
         self.increment_pos() # Increment over '*'
         self.increment_pos() # Increment over '/'
 
+    def raise_multiple_char_error(self):
+        illegal_char = ""
+        while self.current_char not in (' ', '\t', '\n', '_', *ALPHANUMERIC, None):
+            illegal_char += self.current_char
+            self.increment_pos()
+        raise IllegalCharError(illegal_char)
+    
+    def check_multiple_char_error_length_1(self): #Check for multiple character error on characters of length 1
+        if self.pos + 1 < len(self.text) and self.text[self.pos + 1] not in (' ', '\t', '\n', ';', '_', *ALPHANUMERIC, None):
+            self.raise_multiple_char_error()
+
+    def check_multiple_char_error_length_2(self): #Check for multiple character error on characters of length 2
+        if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', *ALPHANUMERIC, None):
+            self.raise_multiple_char_error()
+
+    def check_multiple_char_error_ass_op(self): 
+        if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', "'", '"', *ALPHANUMERIC, None):
+            self.raise_multiple_char_error()
+
+
+
     def make_tokens(self):
         tokens = []
 
@@ -140,42 +163,52 @@ class Lexer:
                 tokens.append(self.make_identifier())
             elif self.current_char == '+':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_ADDASS, '+='))
                     self.increment_pos() 
                     self.increment_pos() 
-                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '+':
+                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '+': 
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_INC, '++'))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_ADD,'+'))
                     self.increment_pos()
             elif self.current_char == '-':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
-                    tokens.append(Token(TT_SUBASS, '-='))
+                    self.check_multiple_char_error_length_2()
+                    tokens.append(Token(TT_SUBASS, '-='))  
                     self.increment_pos()
                     self.increment_pos()
                 elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '-':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_DEC, '--'))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_SUB,'-'))
                     self.increment_pos()
             elif self.current_char == '*':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '*':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_EXP, '**'))
                     self.increment_pos()
                     self.increment_pos()
                 elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_MULASS, '*='))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_MUL, '*'))
                     self.increment_pos()
             elif self.current_char == '/':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_DIVASS, '/='))
                     self.increment_pos()
                     self.increment_pos()
@@ -187,42 +220,55 @@ class Lexer:
                     self.skip_multiline_comment()
                     tokens.append(Token(TT_MLTCMNTCLS, '*/'))
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_DIV,'/'))
                     self.increment_pos()
             elif self.current_char == '%':                
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_MODASS, '%='))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_MOD,'%'))
                     self.increment_pos()
             elif self.current_char == '=':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', "'", '"', *ALPHANUMERIC, None):
+                        self.raise_multiple_char_error()
                     tokens.append(Token(TT_EQT, '=='))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    if self.pos + 1 < len(self.text) and self.text[self.pos + 1] not in (' ', '\t', '\n', ';', '_', "'", '"', *ALPHANUMERIC, None):
+                        self.raise_multiple_char_error()
                     tokens.append(Token(TT_ASS, '='))
+                    self.check_multiple_char_error_ass_op()
                     self.increment_pos()
             elif self.current_char == '>':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_GRTEQ, '>='))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_GRT,'>'))
                     self.increment_pos()
             elif self.current_char == '<':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_LSTEQ, '<='))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_LST,'<'))
                     self.increment_pos()
             elif self.current_char == '&':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '&':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_LOGAND, '&&'))
                     self.increment_pos()
                     self.increment_pos()
@@ -230,6 +276,7 @@ class Lexer:
                     raise IllegalCharError(self.current_char)
             elif self.current_char == '|':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '|':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_LOGOR, '||'))
                     self.increment_pos()
                     self.increment_pos()
@@ -237,17 +284,19 @@ class Lexer:
                     raise IllegalCharError(self.current_char)
             elif self.current_char == '!':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
+                    self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_NEQT, '!='))
                     self.increment_pos()
                     self.increment_pos()
                 else:
+                    self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_LOGNOT,'!'))
                     self.increment_pos()
             elif self.current_char == '(':
                 tokens.append(Token(TT_LPAREN,'('))
                 self.increment_pos()
             elif self.current_char == ')':
-                tokens.append(Token(TT_LPAREN,')'))
+                tokens.append(Token(TT_RPAREN,')'))
                 self.increment_pos()
             elif self.current_char == '[':
                 tokens.append(Token(TT_LBRACKET, '['))
@@ -262,7 +311,17 @@ class Lexer:
                 tokens.append(Token(TT_RBRACE, '}'))
                 self.increment_pos()
             elif self.current_char == ';':
+                if self.pos + 1 < len(self.text) and self.text[self.pos + 1] not in (' ', '\t', '\n', None):
+                    illegal_char = ""
+                    while self.current_char not in (' ', '\t', '\n', None):
+                        illegal_char += self.current_char
+                        self.increment_pos()
+                    raise IllegalCharError(illegal_char)
                 tokens.append(Token(TT_SEMICOLON, ';'))
+                self.increment_pos()
+            elif self.current_char == ',':
+                self.check_multiple_char_error_length_1()
+                tokens.append(Token(TT_COMMA, ','))
                 self.increment_pos()
             else:
                 raise IllegalCharError(self.current_char)
