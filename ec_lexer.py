@@ -1,5 +1,5 @@
 from constants import *
-from errors import IllegalCharError, UnexpectedFileExtentionError, UnterminatedCommentError, ExcelPermissionError
+from errors import IllegalCharError, UnexpectedFileExtentionError, UnclosedStringError, UnterminatedCommentError, ExcelPermissionError
 import os
 import pandas as pd
 
@@ -22,6 +22,8 @@ def read(file):
         df.to_excel('tokens_table.xlsx', index=False)
     except Exception as e:
         raise ExcelPermissionError()
+    
+    return tokens
         
 def run(contents):
         lexer = Lexer(contents)
@@ -89,9 +91,11 @@ class Lexer:
     def make_string_literal(self):
         id_string = ''
 
-        while self.current_char != None and self.current_char != '"' and self.current_char != "'":
+        while self.current_char != '"' and self.current_char != "'":
             id_string += self.current_char
             self.increment_pos()
+            if self.current_char == None:
+                raise UnclosedStringError()
 
         self.in_quotes = False
 
@@ -134,8 +138,6 @@ class Lexer:
     def check_multiple_char_error_ass_op(self): 
         if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', "'", '"', *ALPHANUMERIC, None):
             self.raise_multiple_char_error()
-
-
 
     def make_tokens(self):
         tokens = []
@@ -216,12 +218,9 @@ class Lexer:
                     self.increment_pos()
                     self.increment_pos()
                 elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '/':
-                    tokens.append(Token(TT_SGLCMNT, '//'))
                     self.skip_singleline_comment()
                 elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '*':
-                    tokens.append(Token(TT_MLTCMNTOPN, '/*'))
                     self.skip_multiline_comment()
-                    tokens.append(Token(TT_MLTCMNTCLS, '*/'))
                 else:
                     self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_DIV,'/'))

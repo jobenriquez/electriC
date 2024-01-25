@@ -12,7 +12,17 @@ class UnterminatedCommentError(Exception):
         self.message = message
         super().__init__(self.message)
 
+class UnclosedStringError(Exception):
+    def __init__(self, message = "Unterminated String/Char Error: a double quotation mark ('"') or single quotation mark ("'") is expected."):
+        self.message = message
+        super().__init__(self.message)
+
 class ExcelPermissionError(Exception):
     def __init__(self, message = "Excel Permission Denied Error: the excel file is currently running and cannot be overwritten."):
+        self.message = message
+        super().__init__(self.message)
+
+class SyntaxError(Exception):
+    def __init__(self, message):
         self.message = message
         super().__init__(self.message)

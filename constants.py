@@ -149,6 +149,21 @@ KEYWORDS = [
     'CSTM',
     'CSTH'
 ]
+TOKEN_DATA_TYPES = [
+    'DT_CHAR',
+    'DT_INT',
+    'DT_FLOAT',
+    'DT_STR',
+    'DT_BOOL'
+]
+TOKEN_ARITH_OPS = [
+    'OP_ADD',
+    'OP_SUB',
+    'OP_MUL',
+    'OP_DIV',
+    'OP_MOD',
+    'OP_EXP'
+]
 #############################
 #          Others           #
 #############################

@@ -1,20 +1,34 @@
-import lexer
+import ec_lexer
+import ec_parser
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from sys import *
 
+# def open_file_dialog():
+#     try:
+#         file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("electriC files", "*.ec"), ("All files", "*.*")])
+
+#         if not file_path:
+#             return
+#         tokens = ec_lexer.read(file_path)
+#         ast = ec_parser.Parser.parse_ec_prog_statement(tokens)
+#         print(ast)
+#         messagebox.showinfo("Success", "The file has been processed successfully. An excel file has been generated.")
+
+#     except Exception as e:
+#         messagebox.showerror("Error", e)
+
 def open_file_dialog():
-    try:
-        file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("electriC files", "*.ec"), ("All files", "*.*")])
+    file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("electriC files", "*.ec"), ("All files", "*.*")])
 
-        if not file_path:
-            return
-        
-        lexer.read(file_path)
-        messagebox.showinfo("Success", "The file has been processed successfully. An excel file has been generated.")
+    if not file_path:
+        return
+    tokens = ec_lexer.read(file_path)
+    parser = ec_parser.Parser(tokens)
+    ast = parser.parse_ec_prog_statement()
+    print(ast)
 
-    except Exception as e:
-        messagebox.showerror("Error", e)
+    messagebox.showinfo("Success", "The file has been processed successfully. An excel file has been generated.")
 
 root = tk.Tk()
 root.title("electriC")
