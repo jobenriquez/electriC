@@ -57,6 +57,22 @@ class BinOpNode:
 	def __repr__(self):
 		return f'({self.left_node}, {self.op_tok}, {self.right_node})'
     
+class AssignmentStatementNode:
+    def __init__(self, identifier, ass_op, value):
+        self.identifier = identifier
+        self.ass_op = ass_op
+        self.value = value
+
+    def __repr__(self):
+        return f'AssignmentStatementNode({self.identifier}, {self.ass_op}, {self.value})'
+            
+class UnaryStatementNode:
+    def __init__(self, identifier, unary_op):
+        self.identifier = identifier
+        self.unary_op = unary_op
+    
+    def __repr__(self):
+        return f'AssignmentStatementNode({self.identifier}, {self.unary_op})'
     
 #############################
 #           Parser          #
@@ -73,9 +89,9 @@ class Parser:
             self.current_token = self.tokens[self.token_index]
             self.token_index += 1
         
-    # def peek_next_token(self):
-    #     if self.token_index < len(self.tokens):
-    #         return self.tokens[self.token_index]
+    def peek_next_token(self):
+        if self.token_index < len(self.tokens):
+            return self.tokens[self.token_index]
 
     def match_type(self, expected_type):
         if self.current_token.type_ == expected_type:
@@ -126,6 +142,8 @@ class Parser:
     def identify_statements(self):
         if self.current_token.type_ in TOKEN_DATA_TYPES:
             return self.parse_declaration_statement()
+        if self.current_token.type_ == 'IDENTIFIER':
+            return self.parse_assignment_unary_statement()
         
     def parse_declaration_statement(self):
         if self.token_index < len(self.tokens):
@@ -149,6 +167,8 @@ class Parser:
 
         if self.current_token.type_ == 'IDENTIFIER':        
             identifier = self.parse_identifier()
+            if self.current_token.type_ not in ('OP_ASS', 'DEL_COMMA', None):
+                raise SyntaxError(f"Expected an assignment operator or a semicolon, but found {self.current_token.type_}")
             initialization = self.parse_initialization(expected_data_type)
 
             identifier_list.append((identifier, initialization))
@@ -161,7 +181,7 @@ class Parser:
 
                 identifier_list.append((next_identifier, next_initialization))
         else:
-            raise SyntaxError("Expected IDENTIFIER after data type")
+            raise SyntaxError(f"Expected an identifier, but found {self.current_token.type_}")
         return identifier_list
     
     def parse_identifier(self):
@@ -170,23 +190,26 @@ class Parser:
             self.consume_token()
             return IdentifierNode(identifier_value)
         else:
-            raise SyntaxError("Expected an identifier, but found {self.current_token.type_}")
+            raise SyntaxError(f"Expected an identifier, but found {self.current_token.type_}")
     
     def parse_initialization(self, expected_data_type):
         if expected_data_type == "string" or "char":
-            if self.current_token.type_ == 'OP_ASS':
+            if self.current_token.type_ in TOKEN_ASS_OPS:
                 type_of_delimeter = None
-                self.match_type('OP_ASS')
+                #self.match_type('OP_ASS')
+                self.consume_token()
+
                 if self.current_token.type_ == 'DEL_DBLQUOTE': 
                     self.match_type('DEL_DBLQUOTE')
-                    type_of_delimeter = 'DEL_DBLQUOTE'
+                    type_of_delimeter = 'DEL_DBLQUOTE' # Save the type of delimiter used for checking
                 elif self.current_token.type_ == 'DEL_SGLQUOTE':
                     self.match_type('DEL_SGLQUOTE')
                     type_of_delimeter = 'DEL_SGLQUOTE'
+
                 try:
                     initialization = self.parse_literal(expected_data_type)
                     if type_of_delimeter == 'DEL_DBLQUOTE': 
-                        self.match_type('DEL_DBLQUOTE')
+                        self.match_type('DEL_DBLQUOTE') # Ensure that the delimiter used matches
                     elif type_of_delimeter == 'DEL_SGLQUOTE':
                         self.match_type('DEL_SGLQUOTE')
                     return initialization
@@ -278,3 +301,26 @@ class Parser:
             return self.parse_identifier()
         else:
             raise SyntaxError(f"Unexpected token: {self.current_token.type_}")
+        
+    def get_data_type_value(self, literal_type):
+        return TOKEN_DATA_TYPE_VALUES[literal_type]
+        
+    def parse_assignment_unary_statement(self):
+        if self.current_token.type_ == 'IDENTIFIER':
+            identifier = self.parse_identifier()
+            next_token = self.peek_next_token()
+
+            if self.current_token.type_ in TOKEN_ASS_OPS:
+                if next_token.type_ in TOKEN_DATA_TYPE_VALUES:
+                    ass_op_type = self.current_token.value
+                    data_type = self.get_data_type_value(next_token.type_)
+                    value = self.parse_initialization(data_type)
+                    return AssignmentStatementNode(identifier, ass_op_type, value)
+            elif self.current_token.type_ in TOKEN_UNR_OPS:
+                unary_op = self.current_token.value
+                self.consume_token()
+                return UnaryStatementNode(identifier, unary_op)
+            else:
+                raise SyntaxError(f"Expected an assignment or unary operator, but found {self.current_token.type_}")
+        else:
+            raise SyntaxError(f"Expected an identifier, but found {self.current_token.type_}")
