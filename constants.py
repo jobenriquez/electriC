@@ -156,6 +156,14 @@ TOKEN_DATA_TYPES = [
     'DT_STR',
     'DT_BOOL'
 ]
+TOKEN_DATA_TYPE_VALUES = {
+    'LIT_INT': 'int',
+    'LIT_FLT': 'float',
+    'LIT_STR': 'string',
+    'LIT_CHAR': 'char',
+    'LIT_BOOLTRUE': 'bool',
+    'LIT_BOOLFALSE':'bool'
+}
 TOKEN_ARITH_OPS = [
     'OP_ADD',
     'OP_SUB',
@@ -164,6 +172,20 @@ TOKEN_ARITH_OPS = [
     'OP_MOD',
     'OP_EXP'
 ]
+TOKEN_ASS_OPS = [
+    'OP_ASS',
+    'OP_ADDASS',
+    'OP_SUBASS',
+    'OP_MULASS',
+    'OP_DIVASS',
+    'OP_MODASS'
+]
+TOKEN_UNR_OPS = [
+    'OP_INC',
+    'OP_DEC'
+]
+
+
 #############################
 #          Others           #
 #############################
