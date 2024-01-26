@@ -41,15 +41,22 @@ class LiteralNode:
     def __repr__(self):
         return f'LiteralNode({self.value})'
     
-class ArithmeticExpressionNode:
-    def __init__(self, operator, left_operand, right_operand):
-        self.operator = operator
-        self.left_operand = left_operand
-        self.right_operand = right_operand
+class NumberNode:
+	def __init__(self, tok):
+		self.tok = tok
 
-    def __repr__(self):
-        return f'ArithmeticExpressionNode({self.operator}, {self.left_operand}, {self.right_operand})'
+	def __repr__(self):
+		return f'{self.tok}'
 
+class BinOpNode:
+	def __init__(self, left_node, op_tok, right_node):
+		self.left_node = left_node
+		self.op_tok = op_tok
+		self.right_node = right_node
+
+	def __repr__(self):
+		return f'({self.left_node}, {self.op_tok}, {self.right_node})'
+    
     
 #############################
 #           Parser          #
@@ -66,9 +73,9 @@ class Parser:
             self.current_token = self.tokens[self.token_index]
             self.token_index += 1
         
-    def peek_next_token(self):
-        if self.token_index < len(self.tokens):
-            return self.tokens[self.token_index + 1]
+    # def peek_next_token(self):
+    #     if self.token_index < len(self.tokens):
+    #         return self.tokens[self.token_index]
 
     def match_type(self, expected_type):
         if self.current_token.type_ == expected_type:
@@ -200,23 +207,13 @@ class Parser:
 
     def parse_literal(self, expected_data_type):
         if self.current_token.type_ == 'IDENTIFIER':
-            literal = self.parse_identifier()
-            return LiteralNode(literal)
-
-        if self.current_token.type_ == 'LIT_INT' and expected_data_type == 'int':
-            next_token = self.peek_next_token()
-            if next_token.type_ != 'DEL_SEMICOLON':
-                literal = self.current_token.value
-                self.consume_token()
-                return LiteralNode(literal)
-            self.parse_arith_exp()
+            return self.parse_identifier()
+        elif self.current_token.type_ == 'DEL_LPAREN':
+            return self.parse_additive_expression()
+        elif self.current_token.type_ == 'LIT_INT' and expected_data_type == 'int':
+            return self.parse_additive_expression()
         elif self.current_token.type_ == 'LIT_FLT' and expected_data_type == 'float':
-            next_token = self.peek_next_token()
-            if next_token.type_ != 'DEL_SEMICOLON':
-                literal = self.current_token.value
-                self.consume_token()
-                return LiteralNode(literal)
-            self.parse_arith_exp()
+            return self.parse_additive_expression()
         elif self.current_token.type_ == 'LIT_CHAR' and expected_data_type == 'char':
             literal = self.current_token.value
             self.consume_token()
@@ -236,3 +233,48 @@ class Parser:
         else:
             raise SyntaxError(f"Expected literal of type {expected_data_type}, but found {self.current_token.type_}")
 
+    def parse_additive_expression(self):
+        left_node = self.parse_multiplicative_expression()
+
+        while self.current_token.type_ in ('OP_ADD', 'OP_SUB'):
+            op_token = self.current_token
+            self.consume_token()
+            right_node = self.parse_multiplicative_expression()
+
+            left_node = BinOpNode(left_node, op_token, right_node)
+
+        return left_node
+
+    def parse_multiplicative_expression(self):
+        left_node = self.parse_primary_expression()
+
+        while self.current_token.type_ in ('OP_MUL', 'OP_DIV', 'OP_MOD'):
+            op_token = self.current_token
+            self.consume_token()
+            right_node = self.parse_primary_expression()
+
+            left_node = BinOpNode(left_node, op_token, right_node)
+
+        return left_node
+
+    def parse_primary_expression(self):
+        if self.current_token.type_ == 'LIT_INT':
+            current_value = self.current_token.value
+            self.consume_token()
+            return NumberNode(int(current_value))
+        elif self.current_token.type_ == 'LIT_FLT':
+            current_value = self.current_token.value
+            self.consume_token()
+            return NumberNode(float(current_value))
+        elif self.current_token.type_ == 'DEL_LPAREN':
+            self.consume_token()
+            expression_node = self.parse_additive_expression()
+            if self.current_token.type_ == 'DEL_RPAREN':
+                self.consume_token()
+                return expression_node
+            else:
+                raise SyntaxError("Expected ')' after expression within parentheses")
+        elif self.current_token.type_ == 'IDENTIFIER':
+            return self.parse_identifier()
+        else:
+            raise SyntaxError(f"Unexpected token: {self.current_token.type_}")
