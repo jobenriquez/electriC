@@ -1,5 +1,5 @@
 from constants import *
-from errors import IllegalCharError, UnexpectedFileExtentionError, UnclosedStringError, UnterminatedCommentError, ExcelPermissionError
+from errors import IllegalCharError, UnexpectedFileExtentionError, UnterminatedStringError, UnmatchedDelimiterError, UnterminatedCommentError, ExcelPermissionError
 import os
 import pandas as pd
 
@@ -88,14 +88,25 @@ class Lexer:
         else: 
             return Token(TT_IDENTIFIER, id_str) 
 
-    def make_string_literal(self):
+    def make_string_literal(self, delimiter_type):
         id_string = ''
-
-        while self.current_char != '"' and self.current_char != "'":
-            id_string += self.current_char
-            self.increment_pos()
-            if self.current_char == None:
-                raise UnclosedStringError()
+        
+        if delimiter_type == "double_quote":
+            while self.current_char != '"':
+                id_string += self.current_char
+                self.increment_pos()
+                if self.current_char == "'":
+                    raise UnmatchedDelimiterError("double quote ('\"')")
+                if self.current_char == None:
+                    raise UnterminatedStringError("double quote ('\"')")
+        elif delimiter_type == "single_quote":
+             while self.current_char != "'":
+                id_string += self.current_char
+                self.increment_pos()
+                if self.current_char == '"':
+                    raise UnmatchedDelimiterError('single quote ("\'")')
+                if self.current_char == None:
+                    raise UnterminatedStringError('single quote ("\'")')
 
         self.in_quotes = False
 
@@ -129,20 +140,20 @@ class Lexer:
     
     #Check for multiple character error on characters
     def check_multiple_char_error_length_1(self): 
-        if self.pos + 1 < len(self.text) and self.text[self.pos + 1] not in (' ', '\t', '\n', ';', '_', *ALPHANUMERIC, None):
+        if self.pos + 1 < len(self.text) and self.text[self.pos + 1] not in (' ', '(', '\t', '\n', ';', '_', "'", '"', *ALPHANUMERIC, None):
             self.raise_multiple_char_error()
 
     def check_multiple_char_error_length_2(self): 
-        if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', *ALPHANUMERIC, None):
+        if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '(', '\t', '\n', ';', '_', "'", '"', *ALPHANUMERIC, None):
             self.raise_multiple_char_error()
 
     # def check_multiple_char_error_length_3(self): 
     #     if self.pos + 3 < len(self.text) and self.text[self.pos + 3] not in (' ', '\t', '\n', ';', '_', *ALPHANUMERIC, None):
     #         self.raise_multiple_char_error()
     
-    def check_multiple_char_error_ass_op(self): 
-        if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', "'", '"', '(', *ALPHANUMERIC, None):
-            self.raise_multiple_char_error()
+    # def check_multiple_char_error_ass_op(self): 
+    #     if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '\t', '\n', ';', '_', "'", '"', '(', *ALPHANUMERIC, None):
+    #         self.raise_multiple_char_error()
 
     #Tokenizer class
     def make_tokens(self):
@@ -153,17 +164,19 @@ class Lexer:
             if self.current_char in ' \t \n': # Skip whitespace, tab, and newline characters
                 self.increment_pos()
             elif self.in_quotes:
-                tokens.append(self.make_string_literal())
+                tokens.append(self.make_string_literal(delimiter_type))
                 if tokens[-1] == None: # Remove None from token if the literal is blank
                     tokens.pop()
             elif self.current_char == '"':
-                tokens.append(Token(TT_DOUBLEQUOTE,'"'))
+                #tokens.append(Token(TT_DOUBLEQUOTE,'"'))
+                delimiter_type = "double_quote"
                 self.quote_count += 1
                 if self.quote_count % 2 != 0: 
                     self.in_quotes = True
                 self.increment_pos()
             elif self.current_char == "'":
-                tokens.append(Token(TT_SINGLEQUOTE,"'"))
+                #tokens.append(Token(TT_SINGLEQUOTE,"'"))
+                delimiter_type = "single_quote"
                 self.quote_count += 1
                 if self.quote_count % 2 != 0:
                     self.in_quotes = True
@@ -183,12 +196,12 @@ class Lexer:
                     tokens.append(Token(TT_INC, '++'))
                     self.increment_pos()
                     self.increment_pos()
-                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
-                    self.check_multiple_char_error_length_2()
-                    tokens.append(Token(TT_ADD, '+'))
-                    tokens.append(Token(TT_LPAREN, '('))
-                    self.increment_pos()
-                    self.increment_pos()
+                # elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
+                #     self.check_multiple_char_error_length_2()
+                #     tokens.append(Token(TT_ADD, '+'))
+                #     tokens.append(Token(TT_LPAREN, '('))
+                #     self.increment_pos()
+                #     self.increment_pos()
                 else:
                     self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_ADD,'+'))
@@ -204,12 +217,12 @@ class Lexer:
                     tokens.append(Token(TT_DEC, '--'))
                     self.increment_pos()
                     self.increment_pos()
-                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
-                    self.check_multiple_char_error_length_2()
-                    tokens.append(Token(TT_SUB, '-'))
-                    tokens.append(Token(TT_LPAREN, '('))
-                    self.increment_pos()
-                    self.increment_pos()
+                # elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
+                #     self.check_multiple_char_error_length_2()
+                #     tokens.append(Token(TT_SUB, '-'))
+                #     tokens.append(Token(TT_LPAREN, '('))
+                #     self.increment_pos()
+                #     self.increment_pos()
                 else:
                     self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_SUB,'-'))
@@ -225,12 +238,12 @@ class Lexer:
                     tokens.append(Token(TT_MULASS, '*='))
                     self.increment_pos()
                     self.increment_pos()
-                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
-                    self.check_multiple_char_error_length_2()
-                    tokens.append(Token(TT_MUL, '*'))
-                    tokens.append(Token(TT_LPAREN, '('))
-                    self.increment_pos()
-                    self.increment_pos()
+                # elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
+                #     self.check_multiple_char_error_length_2()
+                #     tokens.append(Token(TT_MUL, '*'))
+                #     tokens.append(Token(TT_LPAREN, '('))
+                #     self.increment_pos()
+                #     self.increment_pos()
                 else:
                     self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_MUL, '*'))
@@ -245,12 +258,12 @@ class Lexer:
                     self.skip_singleline_comment()
                 elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '*':
                     self.skip_multiline_comment()
-                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
-                    self.check_multiple_char_error_length_2()
-                    tokens.append(Token(TT_DIV, '/'))
-                    tokens.append(Token(TT_LPAREN, '('))
-                    self.increment_pos()
-                    self.increment_pos()
+                # elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
+                #     self.check_multiple_char_error_length_2()
+                #     tokens.append(Token(TT_DIV, '/'))
+                #     tokens.append(Token(TT_LPAREN, '('))
+                #     self.increment_pos()
+                #     self.increment_pos()
                 else:
                     self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_DIV,'/'))
@@ -261,12 +274,12 @@ class Lexer:
                     tokens.append(Token(TT_MODASS, '%='))
                     self.increment_pos()
                     self.increment_pos()
-                elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
-                    self.check_multiple_char_error_length_2()
-                    tokens.append(Token(TT_MOD, '%'))
-                    tokens.append(Token(TT_LPAREN, '('))
-                    self.increment_pos()
-                    self.increment_pos()
+                # elif self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '(': 
+                #     self.check_multiple_char_error_length_2()
+                #     tokens.append(Token(TT_MOD, '%'))
+                #     tokens.append(Token(TT_LPAREN, '('))
+                #     self.increment_pos()
+                #     self.increment_pos()
                 else:
                     self.check_multiple_char_error_length_1()
                     tokens.append(Token(TT_MOD,'%'))
@@ -282,7 +295,6 @@ class Lexer:
                     if self.pos + 1 < len(self.text) and self.text[self.pos + 1] not in (' ', '\t', '\n', ';', '_', "'", '"', '(', *ALPHANUMERIC, None):
                         self.raise_multiple_char_error()
                     tokens.append(Token(TT_ASS, '='))
-                    self.check_multiple_char_error_ass_op()
                     self.increment_pos()
             elif self.current_char == '>':
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
