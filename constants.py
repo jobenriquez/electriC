@@ -164,6 +164,14 @@ TOKEN_DATA_TYPE_VALUES = {
     'LIT_BOOLTRUE': 'bool',
     'LIT_BOOLFALSE':'bool'
 }
+VALUES_DATA_TYPE = [ #unused
+    'int',
+    'float',
+    'string',
+    'char',
+    'bool',
+    'bool'
+] 
 TOKEN_ARITH_OPS = [
     'OP_ADD',
     'OP_SUB',
