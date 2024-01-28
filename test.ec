@@ -4,16 +4,18 @@ Main
   string z = CMTH(3);
   int y = Scan();
   string y = Scan();
-
- float ans;
+  
+  float ans;
   ans = CW2(5,y);
 
   PrintLine(ans);
  
-  for(int i=2; i<=100; i++)
+  for(int i=2; i<=100; i--)
   {
     Print("Hello World");
   } 
+
+  x = Scan();
 
   sx = 2;
   boolean x = false;
@@ -23,7 +25,7 @@ Main
   float d = 3.2;
   integer k=0;
 
-  while(x<3)
+  while(x!=3)
   {
     Print("Hi");
   }
@@ -31,5 +33,23 @@ Main
   do 
   {
     PrintLine(x);
-  }while(x>3); 
+  }while(x>=3); 
+
+  for(int i=2; i<=100; i--)
+  {
+    Print("Hello World");
+  } 
+
+  if(i>3)
+  {
+    Print(x);
+  }
+  elseif(d>x)
+  {
+    PrintLine(x);
+  }
+  else
+  {
+    PrintLine("Hello World");
+  }
 }

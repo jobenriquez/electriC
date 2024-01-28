@@ -95,6 +95,7 @@ BOOL_TYPES = {
 }
 RESERVED_WORDS = [
     'if',
+    'elseif',
     'else',
     'break',
     'Print',
@@ -180,10 +181,10 @@ TOKEN_ARITH_OPS = [
     'OP_EXP'
 ]
 TOKEN_ASS_OPS = [
-    'OP_ASS',
-    'OP_ADDASS',
-    'OP_SUBASS',
-    'OP_MULASS',
+    'OP_ASS', 
+    'OP_ADDASS', 
+    'OP_SUBASS', 
+    'OP_MULASS', 
     'OP_DIVASS',
     'OP_MODASS'
 ]
@@ -191,7 +192,6 @@ TOKEN_UNR_OPS = [
     'OP_INC',
     'OP_DEC'
 ]
-
 
 #############################
 #          Others           #

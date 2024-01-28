@@ -1,4 +1,4 @@
 *.xlsx
 *.ec
-__pycache__
+__pycache__/
 discarded.py

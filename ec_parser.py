@@ -5,6 +5,8 @@ from constants import *
 #           Nodes           #
 #############################
 
+# Different node types that build up the Abstract Syntax Tree (AST)
+
 class ECProgStatementNode:
     def __init__(self, body):
         self.body = body
@@ -106,16 +108,16 @@ class SquareRootNode:
     def __repr__(self):
         return f'SquareRootNode({self.node})'
 
-class ConditionalStatementNode:
+class IterativeDoStatementNode:
     def __init__(self, loop_type, condition, body):
         self.loop_type = loop_type
         self.condition = condition
         self.body = body
 
     def __repr__(self):
-        return f'ConditionalStatementNode({self.loop_type}, {self.condition}, {self.body})'
+        return f'IterativeDoStatementNode({self.loop_type}, {self.condition}, {self.body})'
     
-class IterativeStatementNode:
+class IterativeForStatementNode:
     def __init__(self, variable, condition, unary_exp,  body):
         self.variable = variable
         self.condition = condition
@@ -123,7 +125,19 @@ class IterativeStatementNode:
         self.body = body
 
     def __repr__(self):
-        return f'IterativeStatementNode({self.variable}; {self.condition}; {self.unary_exp}), {self.body})'
+        return f'IterativeForStatementNode({self.variable}; {self.condition}; {self.unary_exp}), {self.body})'
+    
+class ConditionalStatementNode:
+    def __init__(self, condition, if_body, elif_conditions=None, elif_bodies=None, else_body=None):
+        self.condition = condition
+        self.if_body = if_body
+        self.elif_conditions = elif_conditions if elif_conditions is not None else []
+        self.elif_bodies = elif_bodies if elif_bodies is not None else []
+        self.else_body = else_body
+
+    def __repr__(self):
+        return f'ConditionalStatementNode({self.condition}, {self.if_body}, {self.elif_conditions}, {self.elif_bodies}, {self.else_body})'
+
     
 #############################
 #           Parser          #
@@ -160,6 +174,7 @@ class Parser:
         else:
             raise SyntaxError(f"Expected {expected_value}, but found {self.current_token.value}")
     
+    # The starting point of an electriC program
     def parse_ec_prog_statement(self):
         self.consume_token()
 
@@ -181,6 +196,7 @@ class Parser:
 
         return ECProgStatementNode(body)
     
+    # Parse each line of the body
     def parse_body(self):
         statements = []
 
@@ -217,9 +233,11 @@ class Parser:
             return node
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'for':
             return self.parse_for_statement()
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'if':
+            return self.parse_if_statement()
         else:
             raise SyntaxError("Invalid statement encountered")
-        
+    
     def parse_declaration_statement(self):
         if self.token_index < len(self.tokens):
             data_type = self.identify_data_type()
@@ -240,12 +258,13 @@ class Parser:
     def parse_variable_list(self, expected_data_type):
         identifier_list = []
 
+        # Check if it follows the correct format
         if self.current_token.type_ == 'IDENTIFIER':        
             identifier = self.parse_identifier()
             if self.current_token.type_ not in ('OP_ASS', 'DEL_COMMA', 'DEL_SEMICOLON', None):
                 raise SyntaxError(f"Expected an assignment operator or a semicolon, but found {self.current_token.type_}")
+            
             initialization = self.parse_initialization(expected_data_type)
-
             identifier_list.append((identifier, initialization))
 
             # Check if there are more identifiers
@@ -267,6 +286,7 @@ class Parser:
             raise SyntaxError(f"Expected an identifier, but found {self.current_token.type_}")
     
     def parse_initialization(self, expected_data_type):
+        # Ensure that assignment operators other than '=' only work with int and float literals
         if expected_data_type in ['int', 'float', 'integer', None]:
             if self.current_token.type_ in TOKEN_ASS_OPS:
                 self.consume_token()
@@ -287,6 +307,7 @@ class Parser:
             raise SyntaxError(f"Unexpected token: {self.current_token.type_}")
 
     def parse_literal(self, expected_data_type):
+            # Disallow boolean operations on identifiers of type string, bool, and char
         if self.current_token.type_ == 'IDENTIFIER' and expected_data_type not in ['string', 'bool', 'boolean', 'char', 'character']:
             return self.parse_additive_expression()
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'Scan':
@@ -317,11 +338,10 @@ class Parser:
             literal = self.current_token.value
             self.consume_token()
             return LiteralNode(literal)
-        elif self.current_token.value == 'Scan':
-            return self.parse_input_statement()
         else:
             raise SyntaxError(f"Expected literal of type {expected_data_type}, but found {self.current_token.type_}")
-
+        
+    # The next three methods ensure that boolean expressions are evaluated correctly, following the order PMDAS
     def parse_additive_expression(self):
         left_node = self.parse_multiplicative_expression()
 
@@ -367,7 +387,7 @@ class Parser:
             return self.parse_identifier()
         else:
             raise SyntaxError(f"Unexpected token: {self.current_token.type_}")
-        
+
     def parse_input_statement(self):
         self.consume_token()
         if self.current_token.type_ == 'DEL_LPAREN':
@@ -409,6 +429,7 @@ class Parser:
         else:
             raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
         
+    # This method primarily handles the parsing of statements starting with an identifier (e.g. x = Scan() or x++)
     def parse_assignment_unary_statement(self):
         if self.current_token.type_ == 'IDENTIFIER':
             identifier = self.parse_identifier()
@@ -569,6 +590,7 @@ class Parser:
     def parse_square_root(self, node):
         return SquareRootNode(node)
     
+    # The next four methods handles the correct parsing of boolean expressions
     def parse_logical_or_expression(self):
         left_node = self.parse_logical_and_expression()
 
@@ -644,7 +666,7 @@ class Parser:
         else:
             raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
 
-        return ConditionalStatementNode(loop_type, condition_node, body_node)
+        return IterativeDoStatementNode(loop_type, condition_node, body_node)
     
     def parse_do_while_statement(self):
         loop_type = "do_while_loop"
@@ -679,7 +701,7 @@ class Parser:
         else:
             raise SyntaxError(f"Expected ')', but found {self.current_token.type_}") 
 
-        return ConditionalStatementNode(loop_type, condition_node, body_node)
+        return IterativeDoStatementNode(loop_type, condition_node, body_node)
     
     def parse_for_statement(self):
         self.consume_token()
@@ -724,4 +746,89 @@ class Parser:
         else:
             raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
 
-        return IterativeStatementNode(variable, condition_node, unary_exp, body_node)
+        return IterativeForStatementNode(variable, condition_node, unary_exp, body_node)
+
+    def parse_if_statement(self):
+        self.consume_token()
+        if self.current_token.type_ == 'DEL_LPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
+        
+        condition_node = self.parse_logical_or_expression()
+
+        if self.current_token.type_ == 'DEL_RPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected ')', but found {self.current_token.type_}") 
+        
+        if self.current_token.type_ == 'DEL_LBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'{'}', but found {self.current_token.type_}")
+        
+        if_body_node = self.parse_body()
+
+        if self.current_token.type_ == 'DEL_RBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
+        
+        else_body_node = None
+        elif_conditions = []
+        elif_bodies = []
+
+        while self.current_token.type_ == 'RESERVED_WORD' and (self.current_token.value == 'elseif' or self.current_token.value == 'else'):
+            if self.current_token.value == 'elseif':
+                self.consume_token()
+                if self.current_token.type_ == 'DEL_LPAREN':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
+                
+                elif_condition_node = self.parse_logical_or_expression()
+                elif_conditions.append(elif_condition_node)
+
+                if self.current_token.type_ == 'DEL_RPAREN':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected ')', but found {self.current_token.type_}") 
+                
+                if self.current_token.type_ == 'DEL_LBRACE':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected '{'{'}', but found {self.current_token.type_}")
+                
+                elif_body_node = self.parse_body()
+                elif_bodies.append(elif_body_node)
+
+                if self.current_token.type_ == 'DEL_RBRACE':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
+
+            elif self.current_token.value == 'else':
+                self.consume_token()
+
+                if self.current_token.type_ == 'DEL_LBRACE':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected '{'{'}', but found {self.current_token.type_}")
+                
+                else_body_node = self.parse_body()
+
+                if self.current_token.type_ == 'DEL_RBRACE':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
+
+        return ConditionalStatementNode(condition_node, if_body_node, elif_conditions, elif_bodies, else_body_node)
+
+
+#############################
+#        Known Issues       #
+#############################
+    
+# 1. The parser may throw an "Expected ; after statement" error
+#    erratically upon encountering an improperly handled or 
+#    unhandled error. 

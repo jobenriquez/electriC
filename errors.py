@@ -8,21 +8,20 @@ class UnexpectedFileExtentionError(Exception):
         super().__init__(self.message)
 
 class UnterminatedCommentError(Exception):
-    def __init__(self, message = "Unterminated Comment Error: a '*/' is expected to terminate the multiline comment."):
+    def __init__(self, message = "Unterminated Comment Error: a '*/' is expected to terminate a multiline comment."):
         self.message = message
         super().__init__(self.message)
 
 class UnterminatedStringError(Exception):
     def __init__(self, delimiter, message = "Unterminated String/Char Error"):
         self.message = message
-        super().__init__(f"{message}: a {delimiter} is expected to terminate the string/char.")
+        super().__init__(f"{message}: a {delimiter} is expected to terminate a string/char literal.")
 
 class UnmatchedDelimiterError(Exception):
     def __init__(self, delimiter, message = "Unmatched String/Char Delimiter Error"):
         self.message = message
-        super().__init__(f"{message}: a {delimiter} is expected to terminate the string/char.")
+        super().__init__(f"{message}: a {delimiter} is expected to terminate a string/char literal.")
         
-
 class ExcelPermissionError(Exception):
     def __init__(self, message = "Excel Permission Denied Error: the excel file is currently running and cannot be overwritten."):
         self.message = message

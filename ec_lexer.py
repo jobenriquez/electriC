@@ -38,6 +38,11 @@ class Token:
     def __repr__(self):
         return f'{self.type_}: {self.value}'
     
+
+#############################
+#           Lexer           #
+#############################
+    
 class Lexer:
     def __init__(self, text):
         self.text = text
@@ -147,13 +152,17 @@ class Lexer:
         if self.pos + 2 < len(self.text) and self.text[self.pos + 2] not in (' ', '(', '\t', '\n', ';', '_', "'", '"', ')', *ALPHANUMERIC, None):
             self.raise_multiple_char_error()
 
-    #Tokenizer class
+
+#############################
+#         Tokenizer         #
+#############################
+            
     def make_tokens(self):
         tokens = []
 
         # Loop until EOF
         while self.current_char != None: 
-            if self.current_char in ' \t \n': # Skip whitespace, tab, and newline characters
+            if self.current_char in ' \t \n':
                 self.increment_pos()
             elif self.in_quotes:
                 tokens.append(self.make_string_literal(delimiter_type))
@@ -206,11 +215,6 @@ class Lexer:
                     tokens.append(Token(TT_SUB,'-'))
                     self.increment_pos()
             elif self.current_char == '*':
-                # if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '*':
-                #     self.check_multiple_char_error_length_2()
-                #     tokens.append(Token(TT_EXP, '**'))
-                #     self.increment_pos()
-                #     self.increment_pos()
                 if self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '=':
                     self.check_multiple_char_error_length_2()
                     tokens.append(Token(TT_MULASS, '*='))
@@ -337,4 +341,9 @@ class Lexer:
                 raise IllegalCharError(self.current_char)
         return tokens
     
+
+#############################
+#        Known Issues       #
+#############################
     
+# 1. None
