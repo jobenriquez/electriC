@@ -106,6 +106,24 @@ class SquareRootNode:
     def __repr__(self):
         return f'SquareRootNode({self.node})'
 
+class ConditionalStatementNode:
+    def __init__(self, loop_type, condition, body):
+        self.loop_type = loop_type
+        self.condition = condition
+        self.body = body
+
+    def __repr__(self):
+        return f'ConditionalStatementNode({self.loop_type}, {self.condition}, {self.body})'
+    
+class IterativeStatementNode:
+    def __init__(self, variable, condition, unary_exp,  body):
+        self.variable = variable
+        self.condition = condition
+        self.unary_exp = unary_exp
+        self.body = body
+
+    def __repr__(self):
+        return f'IterativeStatementNode({self.variable}; {self.condition}; {self.unary_exp}), {self.body})'
     
 #############################
 #           Parser          #
@@ -169,20 +187,36 @@ class Parser:
         while self.current_token.type_ != 'DEL_RBRACE':
             current_statement = self.identify_statements()
             statements.append(current_statement)
-            if self.current_token.type_ == 'DEL_SEMICOLON':
-                self.consume_token() 
-            else:
-                raise SyntaxError("Expected ';' after statement")
-
+            
         return BodyNode(statements)
+    
+    def check_semicolon(self):
+        if self.current_token.type_ == 'DEL_SEMICOLON':
+            self.consume_token() 
+        else:
+            raise SyntaxError("Expected ';' after statement")
 
     def identify_statements(self):
         if self.current_token.type_ in TOKEN_DATA_TYPES:
-            return self.parse_declaration_statement()
-        if self.current_token.type_ == 'IDENTIFIER':
-            return self.parse_assignment_unary_statement()
-        if self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value in ['Print', 'PrintLine']:
-            return self.parse_output_statement()
+            node = self.parse_declaration_statement()    
+            self.check_semicolon()
+            return node
+        elif self.current_token.type_ == 'IDENTIFIER':
+            node = self.parse_assignment_unary_statement()
+            self.check_semicolon()
+            return node
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value in ['Print', 'PrintLine']:
+            node =  self.parse_output_statement()
+            self.check_semicolon()
+            return node
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'while':
+            return self.parse_while_statement()
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'do':
+            node = self.parse_do_while_statement()
+            self.check_semicolon()
+            return node
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'for':
+            return self.parse_for_statement()
         else:
             raise SyntaxError("Invalid statement encountered")
         
@@ -208,7 +242,7 @@ class Parser:
 
         if self.current_token.type_ == 'IDENTIFIER':        
             identifier = self.parse_identifier()
-            if self.current_token.type_ not in ('OP_ASS', 'DEL_COMMA', None):
+            if self.current_token.type_ not in ('OP_ASS', 'DEL_COMMA', 'DEL_SEMICOLON', None):
                 raise SyntaxError(f"Expected an assignment operator or a semicolon, but found {self.current_token.type_}")
             initialization = self.parse_initialization(expected_data_type)
 
@@ -240,7 +274,7 @@ class Parser:
                 return initialization
             else:
                 return None
-        elif expected_data_type in ['string', 'char', 'bool', 'boolean', None]:
+        elif expected_data_type in ['string', 'char', 'bool', 'boolean', 'character', None]:
             if self.current_token.type_ not in ['OP_ASS', None]:
                 raise SyntaxError(f"Expected an assignment operator, but found {self.current_token.type_}")
             if self.current_token.type_ == 'OP_ASS':
@@ -249,13 +283,18 @@ class Parser:
                 return initialization
             else:
                 return None
-            
         else:
             raise SyntaxError(f"Unexpected token: {self.current_token.type_}")
 
     def parse_literal(self, expected_data_type):
-        if self.current_token.type_ == 'IDENTIFIER':
-            return self.parse_identifier()
+        if self.current_token.type_ == 'IDENTIFIER' and expected_data_type not in ['string', 'bool', 'boolean', 'char', 'character']:
+            return self.parse_additive_expression()
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'Scan':
+            input_node = self.parse_input_statement()
+            self.consume_token()
+            return input_node
+        elif self.current_token.type_ == 'KEYWORD':
+            return self.parse_ec_keywords()
         elif self.current_token.type_ == 'DEL_LPAREN':
             return self.parse_additive_expression()
         elif self.current_token.type_ == 'LIT_INT' and expected_data_type == 'int' or expected_data_type == 'integer':
@@ -343,6 +382,7 @@ class Parser:
     def parse_output_statement(self):
         output_statement = self.current_token.value
         self.consume_token()
+
         if self.current_token.type_ == 'DEL_LPAREN':
             self.consume_token()
             if self.current_token.type_ == 'LIT_INT':
@@ -487,12 +527,12 @@ class Parser:
         self.consume_token()
         if self.current_token.type_ == 'DEL_LPAREN':
             self.consume_token()
-            if self.current_token.type_ in ['LIT_INT', 'LIT_FLT']:
+            if self.current_token.type_ in ['LIT_INT', 'LIT_FLT', 'IDENTIFIER']:
                 var1 = self.current_token.value
                 self.consume_token()
                 if self.current_token.type_ == 'DEL_COMMA':
                     self.consume_token()
-                    if self.current_token.type_ in ['LIT_INT', 'LIT_FLT']:
+                    if self.current_token.type_ in ['LIT_INT', 'LIT_FLT', 'IDENTIFIER']:
                         var2 = self.current_token.value
                         self.consume_token()
                         if self.current_token.type_ == 'DEL_RPAREN':
@@ -528,3 +568,160 @@ class Parser:
         
     def parse_square_root(self, node):
         return SquareRootNode(node)
+    
+    def parse_logical_or_expression(self):
+        left_node = self.parse_logical_and_expression()
+
+        while self.current_token.type_ == 'OP_LOGOR':
+            op_token = self.current_token
+            self.consume_token()
+            right_node = self.parse_logical_and_expression()
+
+            left_node = BinOpNode(left_node, op_token, right_node)
+
+        return left_node
+    
+    def parse_logical_and_expression(self):
+        left_node = self.parse_equality_expression()
+
+        while self.current_token.type_ == 'OP_LOGAND':
+            op_token = self.current_token
+            self.consume_token()
+            right_node = self.parse_equality_expression()
+
+            left_node = BinOpNode(left_node, op_token, right_node)
+
+        return left_node
+    
+    def parse_equality_expression(self):
+        left_node = self.parse_relational_expression()
+
+        while self.current_token.type_ in ['OP_EQT', 'OP_NEQT']:
+            op_token = self.current_token
+            self.consume_token()
+            right_node = self.parse_relational_expression()
+
+            left_node = BinOpNode(left_node, op_token, right_node)
+
+        return left_node
+    
+    def parse_relational_expression(self):
+        left_node = self.parse_additive_expression()
+
+        if self.current_token.type_ in ('OP_GRT', 'OP_LST', 'OP_GRTEQ', 'OP_LSTEQ'):
+            op_token = self.current_token
+            self.consume_token()
+            right_node = self.parse_additive_expression()
+
+            return BinOpNode(left_node, op_token, right_node)
+        
+        return left_node
+        
+    def parse_while_statement(self):
+        loop_type = "while_loop"
+        self.consume_token()
+        if self.current_token.type_ == 'DEL_LPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
+        
+        condition_node = self.parse_logical_or_expression()
+
+        if self.current_token.type_ == 'DEL_RPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected ')', but found {self.current_token.type_}") 
+        
+        if self.current_token.type_ == 'DEL_LBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'{'}', but found {self.current_token.type_}")
+        
+        body_node = self.parse_body()
+
+        if self.current_token.type_ == 'DEL_RBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
+
+        return ConditionalStatementNode(loop_type, condition_node, body_node)
+    
+    def parse_do_while_statement(self):
+        loop_type = "do_while_loop"
+        self.consume_token()
+
+        if self.current_token.type_ == 'DEL_LBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'{'}', but found {self.current_token.type_}")
+        
+        body_node = self.parse_body()
+
+        if self.current_token.type_ == 'DEL_RBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
+        
+        if self.current_token.value == 'while':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected 'while', but found {self.current_token.type_}")
+        
+        if self.current_token.type_ == 'DEL_LPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
+        
+        condition_node = self.parse_logical_or_expression()
+
+        if self.current_token.type_ == 'DEL_RPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected ')', but found {self.current_token.type_}") 
+
+        return ConditionalStatementNode(loop_type, condition_node, body_node)
+    
+    def parse_for_statement(self):
+        self.consume_token()
+        if self.current_token.type_ == 'DEL_LPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
+        
+        if self.current_token.type_ in ['DT_INT', 'DT_FLOAT']:
+            variable = self.parse_declaration_statement()
+        elif self.current_token.type_ == 'IDENTIFIER':
+            variable = self.parse_variable_list('int')
+        else:
+            raise SyntaxError(f"Expected an identifier or declaration statement of type int/float, but found {self.current_token.type_}") 
+        
+        self.check_semicolon()
+        condition_node = self.parse_logical_or_expression()
+        self.check_semicolon()
+        
+        if self.current_token.type_ == 'IDENTIFIER':
+            next_token = self.peek_next_token()
+
+            if next_token.type_ in TOKEN_UNR_OPS:
+                unary_exp = self.parse_assignment_unary_statement()
+        else:
+            raise SyntaxError(f"Expected a unary expression, but found {self.current_token.type_}") 
+
+        if self.current_token.type_ == 'DEL_RPAREN':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected ')', but found {self.current_token.type_}") 
+        
+        if self.current_token.type_ == 'DEL_LBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'{'}', but found {self.current_token.type_}")
+        
+        body_node = self.parse_body()
+
+        if self.current_token.type_ == 'DEL_RBRACE':
+            self.consume_token()
+        else:
+            raise SyntaxError(f"Expected '{'}'}', but found {self.current_token.type_}")
+
+        return IterativeStatementNode(variable, condition_node, unary_exp, body_node)
