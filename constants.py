@@ -40,7 +40,6 @@ TT_SUB = 'OP_SUB'
 TT_MUL = 'OP_MUL'
 TT_DIV = 'OP_DIV'
 TT_MOD = 'OP_MOD'
-TT_EXP = 'OP_EXP'
 #############################
 #      Unary Operators      #
 #############################
@@ -53,7 +52,7 @@ TT_EQT = 'OP_EQT' #EQUAL TO
 TT_NEQT = 'OP_NEQT'
 TT_GRT = 'OP_GRT'
 TT_LST = 'OP_LST'
-TT_GRTEQ = 'OP_GR'
+TT_GRTEQ = 'OP_GRTEQ'
 TT_LSTEQ = 'OP_LSTEQ'
 TT_LOGAND = 'OP_LOGAND'
 TT_LOGOR = 'OP_LOGOR'
