@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from sys import *
 
+# Open a window to import a .ec file and display window dialogs. 
+# For more comprehensive error information, consider removing 'messagebox.showerror()' function.
 def open_file_dialog():
     try:
         file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("electriC files", "*.ec"), ("All files", "*.*")])
