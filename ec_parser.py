@@ -12,14 +12,14 @@ class ECProgStatementNode:
         self.body = body
 
     def __repr__(self):
-        return f'ECProgStatementNode({self.body})'
+        return f'ECProgStatement({self.body})'
     
 class BodyNode:
     def __init__(self, statements):
         self.statements = statements
 
     def __repr__(self):
-        return f'BodyNode({self.statements})'
+        return f'Body({self.statements})'
     
 class DeclarationStatementNode:
     def __init__(self, data_type, identifier_init_list):
@@ -27,21 +27,21 @@ class DeclarationStatementNode:
         self.identifier_init_list = identifier_init_list
 
     def __repr__(self):
-        return f'DeclarationStatementNode({self.data_type}, {self.identifier_init_list})'
+        return f'DeclarationStatement({self.data_type}, {self.identifier_init_list})'
 
 class IdentifierNode:
     def __init__(self, name):
         self.name = name
 
     def __repr__(self):
-        return f'IdentifierNode({self.name})'
+        return f'Identifier({self.name})'
     
 class LiteralNode:
     def __init__(self, value):
         self.value = value
 
     def __repr__(self):
-        return f'LiteralNode({self.value})'
+        return f'Literal({self.value})'
     
 class NumberNode:
 	def __init__(self, tok):
@@ -66,7 +66,7 @@ class AssignmentStatementNode:
         self.value = value
 
     def __repr__(self):
-        return f'AssignmentStatementNode({self.identifier}, {self.ass_op}, {self.value})'
+        return f'AssignmentStatement({self.identifier}, {self.ass_op}, {self.value})'
             
 class UnaryStatementNode:
     def __init__(self, identifier, unary_op):
@@ -74,7 +74,7 @@ class UnaryStatementNode:
         self.unary_op = unary_op
     
     def __repr__(self):
-        return f'AssignmentStatementNode({self.identifier}, {self.unary_op})'
+        return f'AssignmentStatement({self.identifier}, {self.unary_op})'
     
 class InputStatementNode:
     def __init__(self, identifier, scan_statement):
@@ -82,7 +82,7 @@ class InputStatementNode:
         self.scan_statement = scan_statement
     
     def __repr__(self):
-        return f'InputStatementNode({self.identifier}, {self.scan_statement})'
+        return f'InputStatement({self.identifier}, {self.scan_statement})'
     
 class OutputStatementNode:
     def __init__(self, output_statement, initialization):
@@ -90,7 +90,7 @@ class OutputStatementNode:
         self.initialization = initialization
     
     def __repr__(self):
-        return f'OutputStatementNode({self.output_statement}, {self.initialization})'
+        return f'OutputStatement({self.output_statement}, {self.initialization})'
     
 class ECKeywordNode:
     def __init__(self, var1, op, var2):
@@ -99,14 +99,14 @@ class ECKeywordNode:
         self.var2 = var2
     
     def __repr__(self):
-        return f'ECKeywordNode({self.var1}, {self.op}, {self.var2})'
+        return f'ECKeyword({self.var1}, {self.op}, {self.var2})'
     
 class SquareRootNode:
     def __init__(self, node):
         self.node = node
 
     def __repr__(self):
-        return f'SquareRootNode({self.node})'
+        return f'SquareRoot({self.node})'
 
 class IterativeDoStatementNode:
     def __init__(self, loop_type, condition, body):
@@ -115,7 +115,7 @@ class IterativeDoStatementNode:
         self.body = body
 
     def __repr__(self):
-        return f'IterativeDoStatementNode({self.loop_type}, {self.condition}, {self.body})'
+        return f'IterativeDoStatement({self.loop_type}, {self.condition}, {self.body})'
     
 class IterativeForStatementNode:
     def __init__(self, variable, condition, unary_exp,  body):
@@ -125,7 +125,7 @@ class IterativeForStatementNode:
         self.body = body
 
     def __repr__(self):
-        return f'IterativeForStatementNode({self.variable}; {self.condition}; {self.unary_exp}), {self.body})'
+        return f'IterativeForStatement({self.variable}; {self.condition}; {self.unary_exp}), {self.body})'
     
 class ConditionalStatementNode:
     def __init__(self, condition, if_body, elif_conditions=None, elif_bodies=None, else_body=None):
@@ -136,8 +136,14 @@ class ConditionalStatementNode:
         self.else_body = else_body
 
     def __repr__(self):
-        return f'ConditionalStatementNode({self.condition}, {self.if_body}, {self.elif_conditions}, {self.elif_bodies}, {self.else_body})'
+        return f'ConditionalStatement({self.condition}, {self.if_body}, {self.elif_conditions}, {self.elif_bodies}, {self.else_body})'
 
+class ReturnStatementNode:
+	def __init__(self, value):
+		self.value = value
+
+	def __repr__(self):
+		return f'ReturnStatement({self.value})'
     
 #############################
 #           Parser          #
@@ -225,12 +231,16 @@ class Parser:
             node =  self.parse_output_statement()
             self.check_semicolon()
             return node
-        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'while':
-            return self.parse_while_statement()
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'return':
+            node = self.parse_return_statement()
+            self.check_semicolon()
+            return node
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'do':
             node = self.parse_do_while_statement()
             self.check_semicolon()
             return node
+        elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'while':
+            return self.parse_while_statement()
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'for':
             return self.parse_for_statement()
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'if':
@@ -429,7 +439,7 @@ class Parser:
         else:
             raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
         
-    # This method primarily handles the parsing of statements starting with an identifier (e.g. x = Scan() or x++)
+    # This method primarily handles the parsing of statements starting with an identifier (e.g. x = y, x = Scan(), or x++)
     def parse_assignment_unary_statement(self):
         if self.current_token.type_ == 'IDENTIFIER':
             identifier = self.parse_identifier()
@@ -824,6 +834,29 @@ class Parser:
 
         return ConditionalStatementNode(condition_node, if_body_node, elif_conditions, elif_bodies, else_body_node)
 
+    def parse_return_statement(self):
+        self.consume_token()
+
+        if self.current_token.type_ == 'LIT_INT':
+                value = self.parse_literal('int')
+        elif self.current_token.type_ == 'KEYWORD':
+            value = self.parse_ec_keywords()
+        elif self.current_token.type_ == 'LIT_FLT':
+            value = self.parse_literal('float')
+        elif self.current_token.type_ == 'LIT_STR':
+            value = self.parse_literal('string')
+        elif self.current_token.type_ == 'LIT_CHAR':
+            value = self.parse_literal('char')
+        elif self.current_token.type_ == 'LIT_BOOLTRUE':
+            value = self.parse_literal('bool')
+        elif self.current_token.type_ == 'LIT_BOOLFALSE':
+            value = self.parse_literal('bool')
+        elif self.current_token.type_ == 'IDENTIFIER':
+            value = self.parse_identifier()
+        
+        return ReturnStatementNode(value)
+
+
 
 #############################
 #        Known Issues       #
@@ -832,3 +865,6 @@ class Parser:
 # 1. The parser may throw an "Expected ; after statement" error
 #    erratically upon encountering an improperly handled or 
 #    unhandled error. 
+    
+# 2. The parser cannot handle parentheses when evaluating 
+#    boolean expressions (e.g. d || d && (d || d))
