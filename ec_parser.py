@@ -415,30 +415,42 @@ class Parser:
 
         if self.current_token.type_ == 'DEL_LPAREN':
             self.consume_token()
-            if self.current_token.type_ == 'LIT_INT':
-                value = self.parse_literal('int')
-            elif self.current_token.type_ == 'KEYWORD':
-                value = self.parse_ec_keywords()
-            elif self.current_token.type_ == 'LIT_FLT':
-                value = self.parse_literal('float')
-            elif self.current_token.type_ == 'LIT_STR':
-                value = self.parse_literal('string')
-            elif self.current_token.type_ == 'LIT_CHAR':
-                value = self.parse_literal('char')
-            elif self.current_token.type_ == 'LIT_BOOLTRUE':
-                value = self.parse_literal('bool')
-            elif self.current_token.type_ == 'LIT_BOOLFALSE':
-                value = self.parse_literal('bool')
-            elif self.current_token.type_ == 'IDENTIFIER':
-                value = self.parse_identifier()
-            if self.current_token.type_ == 'DEL_RPAREN':
-                self.consume_token()
-                return OutputStatementNode(f'{output_statement}()', value)
-            else:
-                raise SyntaxError(f"Expected ')', but found {self.current_token.type_}")
+            values = []
+
+            while self.current_token.type_ != 'DEL_RPAREN':
+                if self.current_token.type_ == 'LIT_INT':
+                    value = self.parse_literal('int')
+                elif self.current_token.type_ == 'KEYWORD':
+                    value = self.parse_ec_keywords()
+                elif self.current_token.type_ == 'LIT_FLT':
+                    value = self.parse_literal('float')
+                elif self.current_token.type_ == 'LIT_STR':
+                    value = self.parse_literal('string')
+                elif self.current_token.type_ == 'LIT_CHAR':
+                    value = self.parse_literal('char')
+                elif self.current_token.type_ == 'LIT_BOOLTRUE':
+                    value = self.parse_literal('bool')
+                elif self.current_token.type_ == 'LIT_BOOLFALSE':
+                    value = self.parse_literal('bool')
+                elif self.current_token.type_ == 'IDENTIFIER':
+                    value = self.parse_identifier()
+                else:
+                    raise SyntaxError(f"Unexpected token: {self.current_token.type_}")
+
+                values.append(value)
+
+                if self.current_token.type_ == 'DEL_RPAREN':
+                    break
+                elif self.current_token.type_ == 'OP_ADD':
+                    self.consume_token()
+                else:
+                    raise SyntaxError(f"Expected '+' or ')', but found {self.current_token.type_}")
+
+            self.consume_token()
+            return OutputStatementNode(f'{output_statement}()', values)
         else:
             raise SyntaxError(f"Expected '(', but found {self.current_token.type_}")
-        
+
     # This method primarily handles the parsing of statements starting with an identifier (e.g. x = y, x = Scan(), or x++)
     def parse_assignment_unary_statement(self):
         if self.current_token.type_ == 'IDENTIFIER':
@@ -584,7 +596,7 @@ class Parser:
         self.consume_token()
         if self.current_token.type_ == 'DEL_LPAREN':
             self.consume_token()
-            if self.current_token.type_ in ['LIT_INT', 'LIT_FLT']:
+            if self.current_token.type_ in ['LIT_INT', 'LIT_FLT', 'IDENTIFIER']:
                 var1 = self.current_token.value
                 self.consume_token()
                 if self.current_token.type_ == 'DEL_RPAREN':
@@ -868,3 +880,8 @@ class Parser:
     
 # 2. The parser cannot handle parentheses when evaluating 
 #    boolean expressions (e.g. d || d && (d || d))
+    
+# 3. The parser does not support printing binary expressions 
+#    starting with a variable (e.g. Print(x + 5 * 2);), but
+#    it supports binary expressions when the first parameter/value
+#    is a number (e.g. Print(5 + y * (2-ans))).
