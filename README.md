@@ -14,9 +14,9 @@ python -m venv [name of your venv]
 
 ### Running the Program:
 
-1. On your terminal, run this command to open the sample file.
+1. On your terminal, run this command to pick an eC file.
 ```python
-python shell.py test.ec
+python shell.py
 ```
 
-3. Open the excel file to check what tokens were generated from the test.
+3. Open the excel file to check what tokens were generated from the test. The nodes are printed out in the terminal.
