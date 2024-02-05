@@ -219,22 +219,27 @@ class Parser:
             raise SyntaxError("Expected ';' after statement")
 
     def identify_statements(self):
-        if self.current_token.type_ in TOKEN_DATA_TYPES:
+        #Declaration Statement
+        if self.current_token.type_ in TOKEN_DATA_TYPES: 
             node = self.parse_declaration_statement()    
             self.check_semicolon()
             return node
+        #Assignment Statement
         elif self.current_token.type_ == 'IDENTIFIER':
             node = self.parse_assignment_unary_statement()
             self.check_semicolon()
             return node
+        #Output Statement
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value in ['Print', 'PrintLine']:
             node =  self.parse_output_statement()
             self.check_semicolon()
             return node
+        #Return Statement
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'return':
             node = self.parse_return_statement()
             self.check_semicolon()
             return node
+        #Iterative Statements
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'do':
             node = self.parse_do_while_statement()
             self.check_semicolon()
@@ -243,6 +248,7 @@ class Parser:
             return self.parse_while_statement()
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'for':
             return self.parse_for_statement()
+        #Conditional Statement
         elif self.current_token.type_ == 'RESERVED_WORD' and self.current_token.value == 'if':
             return self.parse_if_statement()
         else:
@@ -353,7 +359,7 @@ class Parser:
         
     # The next three methods ensure that boolean expressions are evaluated correctly, following the order PMDAS
     def parse_additive_expression(self):
-        left_node = self.parse_multiplicative_expression()
+        left_node = self.parse_multiplicative_expression() 
 
         while self.current_token.type_ in ('OP_ADD', 'OP_SUB'):
             op_token = self.current_token
@@ -365,12 +371,12 @@ class Parser:
         return left_node
 
     def parse_multiplicative_expression(self):
-        left_node = self.parse_primary_expression()
+        left_node = self.parse_primary_expression() 
 
         while self.current_token.type_ in ('OP_MUL', 'OP_DIV', 'OP_MOD'):
             op_token = self.current_token
             self.consume_token()
-            right_node = self.parse_primary_expression()
+            right_node = self.parse_primary_expression() 
 
             left_node = BinOpNode(left_node, op_token, right_node)
 

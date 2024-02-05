@@ -107,7 +107,6 @@ RESERVED_WORDS = [
     'do',
     'true',
     'false',
-    'continue',
     'Main'
 ]
 KEYWORDS = [
